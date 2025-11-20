@@ -1,0 +1,16 @@
+[package]
+name = "tps55288-stm32g031g8u6"
+edition = "2021"
+
+[dependencies]
+embedded-hal = "1"
+tps55288-rs = { path = "../..", features = ["async", "defmt"] }
+# MCU HAL placeholder
+# stm32g0xx-hal = { version = "0.2", features = ["stm32g031", "rt"] }
+# embassy-stm32 = { version = "0.1", features = ["stm32g031g8"] }
+
+[lib]
+crate-type = ["rlib"]
+
+[profile.release]
+opt-level = "s"
