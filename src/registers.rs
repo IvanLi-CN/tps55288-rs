@@ -28,7 +28,8 @@ pub mod addr {
 /// Voltage DAC characteristics.
 pub const VOUT_LSB_MV: u16 = 20;
 pub const VOUT_MIN_MV: u16 = 800;
-pub const VOUT_MAX_MV: u16 = 22_000;
+// 10-bit DAC => 1024 steps from 0 to 1023 inclusive.
+pub const VOUT_MAX_MV: u16 = VOUT_MIN_MV + (1023 * VOUT_LSB_MV);
 
 /// Output current limit DAC characteristics.
 pub const ILIM_LSB_MA: u16 = 50;
