@@ -110,14 +110,54 @@ pub struct ModePreset {
 
 /// Known presets from datasheet (ohms in kΩ). Values are for documentation; not used programmatically yet.
 pub const MODE_PRESETS: [ModePreset; 8] = [
-    ModePreset { resistor_kohm: Some(0.0), vcc_source: VccSource::Internal, address: I2cAddress::Addr0x74, light_load_mode: LightLoadMode::Pwm },
-    ModePreset { resistor_kohm: Some(6.19), vcc_source: VccSource::Internal, address: I2cAddress::Addr0x74, light_load_mode: LightLoadMode::Pfm },
-    ModePreset { resistor_kohm: Some(14.3), vcc_source: VccSource::Internal, address: I2cAddress::Addr0x75, light_load_mode: LightLoadMode::Pwm },
-    ModePreset { resistor_kohm: Some(24.9), vcc_source: VccSource::Internal, address: I2cAddress::Addr0x75, light_load_mode: LightLoadMode::Pfm },
-    ModePreset { resistor_kohm: Some(51.1), vcc_source: VccSource::External5v, address: I2cAddress::Addr0x74, light_load_mode: LightLoadMode::Pwm },
-    ModePreset { resistor_kohm: Some(75.0), vcc_source: VccSource::External5v, address: I2cAddress::Addr0x74, light_load_mode: LightLoadMode::Pfm },
-    ModePreset { resistor_kohm: Some(105.0), vcc_source: VccSource::External5v, address: I2cAddress::Addr0x75, light_load_mode: LightLoadMode::Pwm },
-    ModePreset { resistor_kohm: None, vcc_source: VccSource::External5v, address: I2cAddress::Addr0x75, light_load_mode: LightLoadMode::Pfm },
+    ModePreset {
+        resistor_kohm: Some(0.0),
+        vcc_source: VccSource::Internal,
+        address: I2cAddress::Addr0x74,
+        light_load_mode: LightLoadMode::Pwm,
+    },
+    ModePreset {
+        resistor_kohm: Some(6.19),
+        vcc_source: VccSource::Internal,
+        address: I2cAddress::Addr0x74,
+        light_load_mode: LightLoadMode::Pfm,
+    },
+    ModePreset {
+        resistor_kohm: Some(14.3),
+        vcc_source: VccSource::Internal,
+        address: I2cAddress::Addr0x75,
+        light_load_mode: LightLoadMode::Pwm,
+    },
+    ModePreset {
+        resistor_kohm: Some(24.9),
+        vcc_source: VccSource::Internal,
+        address: I2cAddress::Addr0x75,
+        light_load_mode: LightLoadMode::Pfm,
+    },
+    ModePreset {
+        resistor_kohm: Some(51.1),
+        vcc_source: VccSource::External5v,
+        address: I2cAddress::Addr0x74,
+        light_load_mode: LightLoadMode::Pwm,
+    },
+    ModePreset {
+        resistor_kohm: Some(75.0),
+        vcc_source: VccSource::External5v,
+        address: I2cAddress::Addr0x74,
+        light_load_mode: LightLoadMode::Pfm,
+    },
+    ModePreset {
+        resistor_kohm: Some(105.0),
+        vcc_source: VccSource::External5v,
+        address: I2cAddress::Addr0x75,
+        light_load_mode: LightLoadMode::Pwm,
+    },
+    ModePreset {
+        resistor_kohm: None,
+        vcc_source: VccSource::External5v,
+        address: I2cAddress::Addr0x75,
+        light_load_mode: LightLoadMode::Pfm,
+    },
 ];
 
 /// STATUS decoded operating mode.

@@ -1,14 +1,15 @@
 //! Driver scaffold for TPS55288.
 //! Provides blocking I2C helpers; async version will mirror this API behind the `async` feature.
 
+use crate::data_types::{
+    CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, InternalFeedbackRatio, OcpDelay,
+    OperatingStatus, VoutSlewRate,
+};
 use crate::error::Error;
 use crate::registers::{
-    addr, code_to_ilim_ma, code_to_vout_mv, decode_status_mode, ilim_ma_to_code, vout_mv_to_code, ALT_I2C_ADDRESS,
-    CdcBits, DEFAULT_I2C_ADDRESS, IoutLimitBits, ModeBits, StatusBits, VoutFsBits, VoutSrBits,
-};
-use crate::data_types::{
-    CableCompLevel, CableCompOption, FeedbackSource, FaultStatus, InternalFeedbackRatio, OcpDelay, OperatingStatus,
-    VoutSlewRate,
+    ALT_I2C_ADDRESS, CdcBits, DEFAULT_I2C_ADDRESS, IoutLimitBits, ModeBits, StatusBits, VoutFsBits,
+    VoutSrBits, addr, code_to_ilim_ma, code_to_vout_mv, decode_status_mode, ilim_ma_to_code,
+    vout_mv_to_code,
 };
 
 /// TPS55288 driver placeholder.
@@ -154,7 +155,11 @@ where
     }
 
     /// Configure VOUT slew rate and OCP delay.
-    pub fn set_vout_sr(&mut self, slew: VoutSlewRate, ocp_delay: OcpDelay) -> Result<(), Error<I2C::Error>> {
+    pub fn set_vout_sr(
+        &mut self,
+        slew: VoutSlewRate,
+        ocp_delay: OcpDelay,
+    ) -> Result<(), Error<I2C::Error>> {
         let mut bits = VoutSrBits::empty();
         bits |= match slew {
             VoutSlewRate::Sr1p25MvPerUs => VoutSrBits::empty(),
@@ -172,7 +177,11 @@ where
     }
 
     /// Configure feedback source and internal divider ratio.
-    pub fn set_feedback(&mut self, source: FeedbackSource, ratio: InternalFeedbackRatio) -> Result<(), Error<I2C::Error>> {
+    pub fn set_feedback(
+        &mut self,
+        source: FeedbackSource,
+        ratio: InternalFeedbackRatio,
+    ) -> Result<(), Error<I2C::Error>> {
         let mut bits = VoutFsBits::empty();
         if matches!(source, FeedbackSource::External) {
             bits |= VoutFsBits::FB_EXT;
@@ -256,7 +265,8 @@ where
     pub async fn init_async(&mut self) -> Result<(), Error<I2C::Error>> {
         self.write_reg_async(addr::IOUT_LIMIT, IoutLimitBits::EN.bits() | 0b1100100)
             .await?;
-        self.set_vout_mv_async(crate::registers::VOUT_MIN_MV).await?;
+        self.set_vout_mv_async(crate::registers::VOUT_MIN_MV)
+            .await?;
         let mut mode = ModeBits::from_bits_truncate(self.read_reg_async(addr::MODE).await?);
         mode.remove(ModeBits::OE);
         self.write_reg_async(addr::MODE, mode.bits()).await?;
@@ -280,13 +290,22 @@ where
         Ok(buf[0])
     }
 
-    pub async fn update_reg_async(&mut self, reg: u8, mask: u8, value: u8) -> Result<(), Error<I2C::Error>> {
+    pub async fn update_reg_async(
+        &mut self,
+        reg: u8,
+        mask: u8,
+        value: u8,
+    ) -> Result<(), Error<I2C::Error>> {
         let cur = self.read_reg_async(reg).await?;
         let new = (cur & !mask) | (value & mask);
         self.write_reg_async(reg, new).await
     }
 
-    pub async fn write_regs_async(&mut self, start_reg: u8, data: &[u8]) -> Result<(), Error<I2C::Error>> {
+    pub async fn write_regs_async(
+        &mut self,
+        start_reg: u8,
+        data: &[u8],
+    ) -> Result<(), Error<I2C::Error>> {
         let mut buf = [0u8; 8];
         if data.len() + 1 > buf.len() {
             return Err(Error::InvalidConfig);
@@ -299,7 +318,11 @@ where
             .map_err(Error::I2c)
     }
 
-    pub async fn read_regs_async(&mut self, start_reg: u8, data: &mut [u8]) -> Result<(), Error<I2C::Error>> {
+    pub async fn read_regs_async(
+        &mut self,
+        start_reg: u8,
+        data: &mut [u8],
+    ) -> Result<(), Error<I2C::Error>> {
         self.i2c
             .write_read(self.address, &[start_reg], data)
             .await
@@ -319,7 +342,11 @@ where
         Ok(code_to_vout_mv(code))
     }
 
-    pub async fn set_ilim_ma_async(&mut self, ma: u16, enable: bool) -> Result<(), Error<I2C::Error>> {
+    pub async fn set_ilim_ma_async(
+        &mut self,
+        ma: u16,
+        enable: bool,
+    ) -> Result<(), Error<I2C::Error>> {
         let code = ilim_ma_to_code(ma) & 0x7F;
         let mut val = code;
         if enable {
@@ -335,7 +362,11 @@ where
         Ok((code_to_ilim_ma(code), enable))
     }
 
-    pub async fn set_vout_sr_async(&mut self, slew: VoutSlewRate, ocp_delay: OcpDelay) -> Result<(), Error<I2C::Error>> {
+    pub async fn set_vout_sr_async(
+        &mut self,
+        slew: VoutSlewRate,
+        ocp_delay: OcpDelay,
+    ) -> Result<(), Error<I2C::Error>> {
         let mut bits = VoutSrBits::empty();
         bits |= match slew {
             VoutSlewRate::Sr1p25MvPerUs => VoutSrBits::empty(),
@@ -410,7 +441,9 @@ where
         Ok(StatusBits::from_bits_truncate(val))
     }
 
-    pub async fn read_status_async(&mut self) -> Result<(OperatingStatus, FaultStatus), Error<I2C::Error>> {
+    pub async fn read_status_async(
+        &mut self,
+    ) -> Result<(OperatingStatus, FaultStatus), Error<I2C::Error>> {
         let bits = self.read_status_raw_async().await?;
         let mode_bits = decode_status_mode(&bits);
         let operating = match mode_bits {

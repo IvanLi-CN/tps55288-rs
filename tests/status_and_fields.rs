@@ -1,7 +1,7 @@
 use tps55288_rs::data_types::{CableCompLevel, CableCompOption, OcpDelay, VoutSlewRate};
 use tps55288_rs::registers::{
-    code_to_ilim_ma, code_to_vout_mv, decode_status_mode, ilim_ma_to_code, vout_mv_to_code, CdcBits, StatusBits,
-    VoutSrBits,
+    CdcBits, StatusBits, VoutSrBits, code_to_ilim_ma, code_to_vout_mv, decode_status_mode,
+    ilim_ma_to_code, vout_mv_to_code,
 };
 
 #[test]
@@ -77,8 +77,14 @@ fn cdc_level_bits_mapping() {
 fn conversion_edges_match_constants() {
     // ensure clamping helpers stay consistent
     let code_hi = ilim_ma_to_code(10_000);
-    assert_eq!(code_to_ilim_ma(code_hi), tps55288_rs::registers::ILIM_MAX_MA);
+    assert_eq!(
+        code_to_ilim_ma(code_hi),
+        tps55288_rs::registers::ILIM_MAX_MA
+    );
 
     let code_hi_vout = vout_mv_to_code(30_000);
-    assert_eq!(code_to_vout_mv(code_hi_vout), tps55288_rs::registers::VOUT_MAX_MV);
+    assert_eq!(
+        code_to_vout_mv(code_hi_vout),
+        tps55288_rs::registers::VOUT_MAX_MV
+    );
 }

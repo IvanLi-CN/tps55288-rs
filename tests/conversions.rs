@@ -1,4 +1,7 @@
-use tps55288_rs::registers::{code_to_ilim_ma, code_to_vout_mv, ilim_ma_to_code, vout_mv_to_code, VOUT_MAX_MV, VOUT_MIN_MV, ILIM_MAX_MA};
+use tps55288_rs::registers::{
+    ILIM_MAX_MA, VOUT_MAX_MV, VOUT_MIN_MV, code_to_ilim_ma, code_to_vout_mv, ilim_ma_to_code,
+    vout_mv_to_code,
+};
 
 #[test]
 fn vout_roundtrip_mid_range() {
