@@ -4,8 +4,8 @@
 //! Minimal STM32G031G8U6 example sketch using `stm32g0xx-hal` (blocking I2C).
 //!
 //! Wiring (adjust to your board):
-//! - I2C1: PB6 = SCL, PB7 = SDA (with pull-ups)
-//! - EN pin of TPS55288 tied to MCU GPIO (optional; if tied high, skip the GPIO step)
+//! - I2C1: PB6 = SCL, PB7 = SDA (with pull-ups) — matches current hardware
+//! - EN pin of TPS55288 tied to PB5 (push-pull output)
 //! - FB/INT optional to a GPIO input for fault indication
 //!
 //! Build (example):
@@ -48,8 +48,8 @@ fn main() -> ! {
 
     let i2c: HalI2c<pac::I2C1, _> = HalI2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), &mut rcc);
 
-    // Optional EN pin (e.g., PA0) if TPS55288 EN is tied to MCU.
-    let mut en = gpioa.pa0.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
+    // EN pin on PB5.
+    let mut en = gpiob.pb5.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
     en.set_high();
 
     let mut dev = Tps55288::new(i2c);
