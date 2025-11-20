@@ -50,6 +50,11 @@ impl<I2C> Tps55288<I2C> {
     pub fn select_alt_address(&mut self) {
         self.address = ALT_I2C_ADDRESS;
     }
+
+    /// Consume the driver and return the underlying I2C bus.
+    pub fn free(self) -> I2C {
+        self.i2c
+    }
 }
 
 impl<I2C> Tps55288<I2C>

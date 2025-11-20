@@ -1,6 +1,6 @@
-//! Error definitions for TPS55288 driver (placeholder).
+//! Error definitions for TPS55288 driver.
 
-/// Error type generic over I2C error.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Debug)]
 pub enum Error<I2cError> {
     /// Underlying I2C transaction failed.
