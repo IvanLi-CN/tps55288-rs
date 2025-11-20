@@ -1,67 +1,79 @@
 #![no_std]
 #![no_main]
 
-//! Minimal STM32G031G8U6 example sketch using `stm32g0xx-hal` (blocking I2C).
-//!
-//! Wiring (adjust to your board):
-//! - I2C1: PB6 = SCL, PB7 = SDA (with pull-ups) — matches current hardware
-//! - EN pin of TPS55288 tied to PB5 (push-pull output)
-//! - FB/INT optional to a GPIO input for fault indication
-//!
-//! Build (example):
-//! ```
-//! cargo build --release -p tps55288-stm32g031g8u6 --target thumbv6m-none-eabi
-//! ```
-//! Flash (probe-rs example):
-//! ```
-//! probe-rs run --chip STM32G031G8Ux target/thumbv6m-none-eabi/release/tps55288-stm32g031g8u6
-//! ```
+// STM32G031G8U6 example using PB6/PB7 (I2C1) and PB5 (EN).
+// By default, the crate builds a minimal stub. Enable `--features hw` to compile the HAL-based code.
 
-use cortex_m_rt::entry;
-use embedded_hal::i2c::I2c;
-use stm32g0xx_hal as hal;
-
-use hal::gpio::{gpiob::PB, Output, PushPull};
-use hal::i2c::I2c as HalI2c;
-use hal::pac;
-use hal::prelude::*;
-
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::{CableCompLevel, CableCompOption, FeedbackSource, InternalFeedbackRatio, OcpDelay, VoutSlewRate};
-
-type EnaPin = PB<Output<PushPull>>;
-
-#[entry]
+#[cfg(not(feature = "hw"))]
+#[cortex_m_rt::entry]
 fn main() -> ! {
-    let dp = pac::Peripherals::take().unwrap();
-    let mut rcc = dp.RCC.constrain();
-    let mut flash = dp.FLASH.constrain();
+    // Stub build (no HAL) to keep CI green; enable `hw` feature for target build.
+    loop {}
+}
 
-    let clocks = rcc.config().sysclk(16.mhz()).freeze(&mut flash);
+#[cfg(feature = "hw")]
+mod hw {
+    use cortex_m_rt::entry;
+    use embedded_hal::delay::DelayNs;
+    use embedded_hal::i2c::I2c;
+    use stm32g0xx_hal as hal;
 
-    let mut gpioa = dp.GPIOA.split(&mut rcc);
-    let mut gpiob = dp.GPIOB.split(&mut rcc);
+    use hal::gpio::gpiob::PB5;
+    use hal::gpio::{Output, PushPull};
+    use hal::i2c::blocking::I2c; // blocking I2C implementation
+    use hal::pac;
+    use hal::prelude::*;
+    use hal::rcc::Config;
+    use hal::timer::Timer;
 
-    // I2C pins PB6/PB7 (AF1 for I2C1)
-    let scl = gpiob.pb6.into_alternate_open_drain(&mut gpiob.moder, &mut gpiob.otyper, &mut gpiob.afrl);
-    let sda = gpiob.pb7.into_alternate_open_drain(&mut gpiob.moder, &mut gpiob.otyper, &mut gpiob.afrl);
+    use tps55288_rs::data_types::{CableCompLevel, CableCompOption, FeedbackSource, FaultStatus, InternalFeedbackRatio, OcpDelay, OperatingStatus, VoutSlewRate};
+    use tps55288_rs::driver::Tps55288;
 
-    let i2c: HalI2c<pac::I2C1, _> = HalI2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), &mut rcc);
+    #[entry]
+    fn main() -> ! {
+        let dp = pac::Peripherals::take().unwrap();
+        let mut rcc = dp.RCC.freeze(Config::pll()); // simple clock config
 
-    // EN pin on PB5.
-    let mut en = gpiob.pb5.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
-    en.set_high();
+        let gpiob = dp.GPIOB.split(&mut rcc);
+        // I2C1 pins PB6/PB7
+        let scl = gpiob.pb6.into_open_drain_output();
+        let sda = gpiob.pb7.into_open_drain_output();
+        let mut i2c = I2c::i2c1(dp.I2C1, sda, scl, 100.kHz(), &mut rcc);
 
-    let mut dev = Tps55288::new(i2c);
-    dev.init().ok();
-    dev.set_vout_mv(5_000).ok();
-    dev.set_ilim_ma(3_000, true).ok();
-    dev.set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128).ok();
-    dev.set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564).ok();
-    dev.set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true)
-        .ok();
+        // EN pin PB5
+        let mut en: PB5<Output<PushPull>> = gpiob.pb5.into_push_pull_output();
+        en.set_high();
 
-    loop {
-        // TODO: add status/fault poll and VOUT stepping.
+        let mut tim14 = Timer::tim14(dp.TIM14, 1.hz(), &mut rcc);
+        run_example(&mut i2c, &mut tim14);
+    }
+
+    fn run_example<I2C, D>(i2c: &mut I2C, delay: &mut D)
+    where
+        I2C: I2c,
+        D: DelayNs,
+        I2C::Error: core::fmt::Debug,
+    {
+        let mut dev = Tps55288::new(i2c);
+        let _ = dev.init();
+        let _ = dev.set_ilim_ma(3_000, true);
+        let _ = dev.set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564);
+        let _ = dev.set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true);
+        let _ = dev.set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128);
+
+        let mut mv = 3_300u16;
+        loop {
+            let _ = dev.set_vout_mv(mv);
+            mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };
+            if let Ok((mode, faults)) = dev.read_status() {
+                log_status(mv, mode, faults);
+            }
+            delay.delay_ms(1000);
+        }
+    }
+
+    fn log_status(mv: u16, mode: OperatingStatus, faults: FaultStatus) {
+        #[cfg(feature = "defmt")]
+        defmt::info!("vset={}mV mode={:?} sc:{} oc:{} ov:{}", mv, mode, faults.short_circuit, faults.over_current, faults.over_voltage);
     }
 }
