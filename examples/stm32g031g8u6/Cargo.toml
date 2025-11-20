@@ -17,6 +17,7 @@ hw = [
     "panic-probe",
 ]
 
+
 [dependencies]
 tps55288-rs = { path = "../.." }
 embedded-hal = "1"
@@ -49,3 +50,13 @@ panic = "abort"
 
 [profile.dev]
 opt-level = 1
+
+[[bin]]
+name = "step_vout"
+path = "src/bin/step_vout.rs"
+required-features = ["hw"]
+
+[[bin]]
+name = "fixed_5v"
+path = "src/bin/fixed_5v.rs"
+required-features = ["hw"]
