@@ -10,6 +10,18 @@ This document maps the `sc8815-rs` patterns onto TI TPS55288 (36 V, 16 A, four-s
 - Protections: OVP/UVP, current limit (avg + peak), hiccup for short, OTP, output discharge, watchdog/UVLO on EN.
 - Status/FAULT: status bits and write-1-to-clear registers (see register map); FB/INT pin can signal faults when INT mode selected.
 
+## Register Map Summary (from datasheet)
+- 0x00/0x01 `REF`: Reference voltage DAC (10-bit, 20 mV LSB, VOUT range 0.8–22 V).
+- 0x02 `IOUT_LIMIT`: Output current limit (sense between ISP/ISN, 50 mA LSB, ~6.35 A max).
+- 0x03 `VOUT_SR`: Slew-rate control for VOUT steps.
+- 0x04 `VOUT_FS`: Feedback selection/internal DAC vs external FB divider.
+- 0x05 `CDC`: Cable droop compensation.
+- 0x06 `MODE`: Light-load mode (PFM/PWM), VCC source (internal/external 5 V), I2C address select (0x74/0x75), hiccup, discharge, FSW double, OE.
+- 0x07 `STATUS`: Operating/fault status (write-1-to-clear fields; railed faults on FB/INT when INT mode used).
+
+### MODE pin preset table (datasheet)
+- Resistor presets choose I2C address and light-load behavior: 0 kΩ (int VCC, 0x74, PWM), 6.19 kΩ (int, 0x74, PFM), 14.3 kΩ (int, 0x75, PWM), 24.9 kΩ (int, 0x75, PFM), 51.1 kΩ (ext, 0x74, PWM), 75.0 kΩ (ext, 0x74, PFM), 105 kΩ (ext, 0x75, PWM), Open (ext, 0x75, PFM).
+
 ## Architecture (mirrors `sc8815-rs`)
 - **Crate shape**: `lib.rs` exports types + driver, doc-includes README when ready.
 - **Modules**
