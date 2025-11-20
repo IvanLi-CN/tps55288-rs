@@ -1,0 +1,9 @@
+pre-commit:
+  piped: true
+  commands:
+    fmt:
+      run: cargo fmt --all
+    clippy:
+      run: cargo clippy --all-targets --all-features -- -D warnings
+    test:
+      run: cargo test --all --features "async,defmt"
