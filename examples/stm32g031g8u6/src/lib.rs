@@ -1,79 +1,128 @@
 #![no_std]
 #![no_main]
 
-// STM32G031G8U6 example using PB6/PB7 (I2C1) and PB5 (EN).
-// By default, the crate builds a minimal stub. Enable `--features hw` to compile the HAL-based code.
+// STM32G031G8U6 + TPS55288 using Embassy stack, PB6/PB7 I2C1, PB5 EN.
+// Two modes: step VOUT (3.3→21V, 20mV step per sec) and fixed 5V.
+// Build: cargo build --release -p tps55288-stm32g031g8u6 --features hw
+// Flash: probe-rs run --chip STM32G031G8Ux target/thumbv6m-none-eabi/release/tps55288-stm32g031g8u6
 
-#[cfg(not(feature = "hw"))]
-#[cortex_m_rt::entry]
-fn main() -> ! {
-    // Stub build (no HAL) to keep CI green; enable `hw` feature for target build.
-    loop {}
+use defmt::{info, warn};
+use embassy_executor::Spawner;
+use embassy_stm32::{
+    bind_interrupts,
+    gpio::{Level, Output, Speed},
+    i2c::{self, Config as I2cConfig, I2c},
+    time::Hertz,
+};
+use embassy_time::{Duration, Timer};
+use panic_probe as _;
+
+use tps55288_rs::data_types::{CableCompLevel, CableCompOption, FeedbackSource, FaultStatus, InternalFeedbackRatio, OcpDelay, OperatingStatus, VoutSlewRate};
+use tps55288_rs::driver::Tps55288;
+
+bind_interrupts!(struct Irqs {
+    I2C1 => i2c::EventInterruptHandler<embassy_stm32::peripherals::I2C1>, i2c::ErrorInterruptHandler<embassy_stm32::peripherals::I2C1>;
+});
+
+#[embassy_executor::main]
+async fn main(_spawner: Spawner) {
+    let p = embassy_stm32::init(Default::default());
+
+    // EN pin PB5
+    let mut en = Output::new(p.PB5, Level::High, Speed::Low);
+    // LED on PB8 for simple heartbeat
+    let mut led = Output::new(p.PB8, Level::High, Speed::Low);
+
+    // I2C1 on PB6/PB7, 100 kHz
+    let mut i2c_cfg = I2cConfig::default();
+    i2c_cfg.scl_pullup = true;
+    i2c_cfg.sda_pullup = true;
+    let i2c = I2c::new(
+        p.I2C1,
+        p.PB6, // SCL
+        p.PB7, // SDA
+        Irqs,
+        p.DMA1_CH1,
+        p.DMA1_CH2,
+        Hertz(100_000),
+        i2c_cfg,
+    );
+
+    info!("TPS55288 demo start: PB6/PB7 I2C1, PB5 EN");
+
+    // Choose which demo to run
+    let run_fixed = false; // set true for fixed 5V, false for stepping
+
+    if run_fixed {
+        run_fixed_5v(i2c, &mut en, &mut led).await;
+    } else {
+        run_step_vout(i2c, &mut en, &mut led).await;
+    }
 }
 
-#[cfg(feature = "hw")]
-mod hw {
-    use cortex_m_rt::entry;
-    use embedded_hal::delay::DelayNs;
-    use embedded_hal::i2c::I2c;
-    use stm32g0xx_hal as hal;
+async fn setup_common<I2C>(i2c: I2C, en: &mut Output<'_, embassy_stm32::peripherals::PB5>) -> Tps55288<I2C>
+where
+    I2C: embedded_hal_async::i2c::I2c,
+{
+    en.set_high();
+    let mut dev = Tps55288::new(i2c);
+    let _ = dev.init_async().await;
+    let _ = dev.set_ilim_ma_async(3_000, true).await;
+    let _ = dev
+        .set_feedback_async(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564)
+        .await;
+    let _ = dev
+        .set_cable_comp_async(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true)
+        .await;
+    let _ = dev
+        .set_vout_sr_async(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128)
+        .await;
+    dev
+}
 
-    use hal::gpio::gpiob::PB5;
-    use hal::gpio::{Output, PushPull};
-    use hal::i2c::blocking::I2c; // blocking I2C implementation
-    use hal::pac;
-    use hal::prelude::*;
-    use hal::rcc::Config;
-    use hal::timer::Timer;
-
-    use tps55288_rs::data_types::{CableCompLevel, CableCompOption, FeedbackSource, FaultStatus, InternalFeedbackRatio, OcpDelay, OperatingStatus, VoutSlewRate};
-    use tps55288_rs::driver::Tps55288;
-
-    #[entry]
-    fn main() -> ! {
-        let dp = pac::Peripherals::take().unwrap();
-        let mut rcc = dp.RCC.freeze(Config::pll()); // simple clock config
-
-        let gpiob = dp.GPIOB.split(&mut rcc);
-        // I2C1 pins PB6/PB7
-        let scl = gpiob.pb6.into_open_drain_output();
-        let sda = gpiob.pb7.into_open_drain_output();
-        let mut i2c = I2c::i2c1(dp.I2C1, sda, scl, 100.kHz(), &mut rcc);
-
-        // EN pin PB5
-        let mut en: PB5<Output<PushPull>> = gpiob.pb5.into_push_pull_output();
-        en.set_high();
-
-        let mut tim14 = Timer::tim14(dp.TIM14, 1.hz(), &mut rcc);
-        run_example(&mut i2c, &mut tim14);
-    }
-
-    fn run_example<I2C, D>(i2c: &mut I2C, delay: &mut D)
-    where
-        I2C: I2c,
-        D: DelayNs,
-        I2C::Error: core::fmt::Debug,
-    {
-        let mut dev = Tps55288::new(i2c);
-        let _ = dev.init();
-        let _ = dev.set_ilim_ma(3_000, true);
-        let _ = dev.set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564);
-        let _ = dev.set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true);
-        let _ = dev.set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128);
-
-        let mut mv = 3_300u16;
-        loop {
-            let _ = dev.set_vout_mv(mv);
-            mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };
-            if let Ok((mode, faults)) = dev.read_status() {
-                log_status(mv, mode, faults);
-            }
-            delay.delay_ms(1000);
+async fn run_step_vout<I2C>(i2c: I2C, en: &mut Output<'_, embassy_stm32::peripherals::PB5>, led: &mut Output<'_, embassy_stm32::peripherals::PB8>)
+where
+    I2C: embedded_hal_async::i2c::I2c,
+{
+    let mut dev = setup_common(i2c, en).await;
+    let mut mv: u16 = 3_300;
+    loop {
+        let _ = dev.set_vout_mv_async(mv).await;
+        if let Ok((mode, faults)) = dev.read_status_async().await {
+            log_status(mv, mode, faults);
         }
+        led.toggle();
+        mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };
+        Timer::after(Duration::from_secs(1)).await;
     }
+}
 
-    fn log_status(mv: u16, mode: OperatingStatus, faults: FaultStatus) {
-        #[cfg(feature = "defmt")]
-        defmt::info!("vset={}mV mode={:?} sc:{} oc:{} ov:{}", mv, mode, faults.short_circuit, faults.over_current, faults.over_voltage);
+async fn run_fixed_5v<I2C>(i2c: I2C, en: &mut Output<'_, embassy_stm32::peripherals::PB5>, led: &mut Output<'_, embassy_stm32::peripherals::PB8>)
+where
+    I2C: embedded_hal_async::i2c::I2c,
+{
+    let mut dev = setup_common(i2c, en).await;
+    let target = 5_000u16;
+    let _ = dev.set_vout_mv_async(target).await;
+    loop {
+        if let Ok((mode, faults)) = dev.read_status_async().await {
+            log_status(target, mode, faults);
+        }
+        led.toggle();
+        Timer::after(Duration::from_secs(1)).await;
+    }
+}
+
+fn log_status(mv: u16, mode: OperatingStatus, faults: FaultStatus) {
+    if faults.short_circuit || faults.over_current || faults.over_voltage {
+        warn!(
+            "vset={}mV mode={:?} FAULT sc:{} oc:{} ov:{}",
+            mv, mode, faults.short_circuit, faults.over_current, faults.over_voltage
+        );
+    } else {
+        info!(
+            "vset={}mV mode={:?} sc:{} oc:{} ov:{}",
+            mv, mode, faults.short_circuit, faults.over_current, faults.over_voltage
+        );
     }
 }

@@ -3,23 +3,49 @@ name = "tps55288-stm32g031g8u6"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
-embedded-hal = "1"
-tps55288-rs = { path = "../..", features = ["defmt"] }
+[features]
+default = []
+hw = [
+    "embassy-stm32",
+    "embassy-executor",
+    "embassy-time",
+    "defmt",
+    "defmt-rtt",
+    "embedded-hal-async",
+    "tps55288-rs/defmt",
+    "tps55288-rs/async",
+    "panic-probe",
+]
 
-[target.thumbv6m-none-eabi.dependencies]
-stm32g0xx-hal = { version = "0.2", features = ["stm32g031", "rt"] }
+[dependencies]
+tps55288-rs = { path = "../.." }
+embedded-hal = "1"
+
+# Embassy stack (only used when feature "hw" is enabled)
+embassy-executor = { version = "0.5.0", optional = true, features = ["executor-thread", "arch-cortex-m", "defmt"] }
+embassy-time = { version = "0.3.0", optional = true, features = ["defmt"] }
+embassy-stm32 = { version = "0.1.0", optional = true, features = [
+    "stm32g031g8",
+    "time-driver-any",
+    "exti",
+    "defmt",
+    "time",
+    "unstable-pac",
+    "memory-x",
+    "rt",
+] }
+defmt = { version = "0.3", optional = true }
+defmt-rtt = { version = "0.4", optional = true }
+panic-probe = { version = "0.3", optional = true, features = ["print-defmt"] }
 cortex-m = "0.7"
 cortex-m-rt = "0.7"
+embedded-hal-async = { version = "1.0.0", optional = true }
 
 [profile.release]
 opt-level = "s"
-codegen-units = 1
 lto = true
+codegen-units = 1
 panic = "abort"
 
 [profile.dev]
 opt-level = 1
-[features]
-default = []
-hw = []
