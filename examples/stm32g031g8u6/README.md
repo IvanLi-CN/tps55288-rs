@@ -4,8 +4,8 @@
 Demonstrate TPS55288 control on STM32G031G8U6: PPS-like dynamic VOUT steps (5/9/12/15/20V), ILIM config, fault polling.
 
 ## Hardware Assumptions
-- STM32G031G8U6 board with I2C1 available; SCL/SDA to TPS55288.
-- EN pin tied to MCU GPIO (optional). IRQ/INT (FB/INT pin) to GPIO input if routed.
+- STM32G031G8U6 board, I2C1 on PB6 (SCL) / PB7 (SDA) with pull-ups.
+- EN pin tied to PB5 (push-pull). IRQ/INT (FB/INT pin) optional to GPIO input if routed.
 - VIN bench supply (9–20 V). VOUT to load.
 - I2C pull-ups present.
 
@@ -23,4 +23,3 @@ Demonstrate TPS55288 control on STM32G031G8U6: PPS-like dynamic VOUT steps (5/9/
 ## Build/Flash (to be added)
 - Add Cargo configuration with target/runner (e.g., `thumbv6m-none-eabi`).
 - Provide Makefile or justfile for build/flash using openocd/probe-rs.
-
