@@ -12,6 +12,24 @@
 - Cover I2C register map: output voltage/current limits, mode control (buck/boost/auto), PPS-style programmable voltage steps, protections, status/interrupts.
 - Ship integration example for STM32G031G8U6 demonstrating PPS-like VOUT control and fault polling.
 
+## Usage (sync)
+```rust
+use tps55288_rs::driver::Tps55288;
+use tps55288_rs::{VoutSlewRate, OcpDelay, FeedbackSource, InternalFeedbackRatio, CableCompOption, CableCompLevel};
+use embedded_hal::i2c::I2c;
+
+fn example<I2C: I2c>(i2c: I2C) {
+    let mut dev = Tps55288::new(i2c);
+    dev.init().ok();
+    dev.set_vout_mv(5_000).ok();
+    dev.set_ilim_ma(3_000, true).ok();
+    dev.set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128).ok();
+    dev.set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564).ok();
+    dev.set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true).ok();
+    let _ = dev.read_status();
+}
+```
+
 ## Repo Layout
 - `src/` — registers, data types, driver core (sync + async helpers), error handling.
 - `examples/stm32g031g8u6/` — board wiring notes and build plan (code pending).
