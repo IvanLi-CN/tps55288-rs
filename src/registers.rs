@@ -125,7 +125,7 @@ pub fn code_to_vout_mv(code: u16) -> u16 {
 /// Convert output current limit (mA) to DAC code (50 mA LSB). Clamps to datasheet max.
 pub fn ilim_ma_to_code(ma: u16) -> u8 {
     let ma = ma.min(ILIM_MAX_MA);
-    (ma / ILIM_LSB_MA).min((ILIM_MAX_MA / ILIM_LSB_MA)) as u8
+    (ma / ILIM_LSB_MA).min(ILIM_MAX_MA / ILIM_LSB_MA) as u8
 }
 
 /// Convert current limit DAC code to milliamps.
@@ -137,7 +137,7 @@ pub fn code_to_ilim_ma(code: u8) -> u16 {
 // TODO: confirm MODE bit0 semantics when implementing driver.
 
 /// Decode STATUS operating status bits into mode index (0b00 boost, 0b01 buck, 0b10 buck-boost, 0b11 reserved).
-pub fn decode_status_mode(bits: StatusBits) -> u8 {
+pub fn decode_status_mode(bits: &StatusBits) -> u8 {
     let raw = bits.bits() & (StatusBits::STATUS0 | StatusBits::STATUS1).bits();
     raw & 0b11
 }

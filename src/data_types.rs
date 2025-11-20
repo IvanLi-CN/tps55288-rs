@@ -2,6 +2,7 @@
 //! Concrete value mappings will be filled when register bitfields are implemented.
 
 /// I2C slave addresses available via MODE pin presets.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum I2cAddress {
     Addr0x74,
@@ -9,6 +10,7 @@ pub enum I2cAddress {
 }
 
 /// Light-load operating mode.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LightLoadMode {
     /// Pulse-frequency modulation at light load.
@@ -18,6 +20,7 @@ pub enum LightLoadMode {
 }
 
 /// VCC source selection.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VccSource {
     /// Internal LDO.
@@ -27,6 +30,7 @@ pub enum VccSource {
 }
 
 /// Light-load operating mode selection (PFM/PWM).
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LightLoadOverride {
     /// Follow external resistor preset (MODE bit0 = 0).
@@ -36,6 +40,7 @@ pub enum LightLoadOverride {
 }
 
 /// Output slew rate options for VOUT changes.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VoutSlewRate {
     Sr1p25MvPerUs,
@@ -45,6 +50,7 @@ pub enum VoutSlewRate {
 }
 
 /// Overcurrent response delay selections.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OcpDelay {
     Us128,
@@ -54,6 +60,7 @@ pub enum OcpDelay {
 }
 
 /// Feedback source selection.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum FeedbackSource {
     Internal,
@@ -61,6 +68,7 @@ pub enum FeedbackSource {
 }
 
 /// Internal feedback ratios (per datasheet INTFB bits).
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum InternalFeedbackRatio {
     R0_2256,
@@ -70,6 +78,7 @@ pub enum InternalFeedbackRatio {
 }
 
 /// Cable droop compensation mode.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CableCompOption {
     Internal,
@@ -77,6 +86,7 @@ pub enum CableCompOption {
 }
 
 /// Cable droop compensation level (CDC[2:0]).
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CableCompLevel {
     V0p0,
@@ -111,6 +121,7 @@ pub const MODE_PRESETS: [ModePreset; 8] = [
 ];
 
 /// STATUS decoded operating mode.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OperatingStatus {
     Boost,
@@ -120,6 +131,7 @@ pub enum OperatingStatus {
 }
 
 /// Fault flags decoded from STATUS.
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct FaultStatus {
     pub short_circuit: bool,
