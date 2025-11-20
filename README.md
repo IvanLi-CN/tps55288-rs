@@ -1,6 +1,6 @@
 # TPS55288 Buck-Boost Driver (Rust)
 
-Rust driver skeleton for TI TPS55288 36 V / 16 A four-switch buck-boost converter with I2C control. This repo follows the patterns proven in `sc8815-rs` (no-std, sync/async via `maybe-async-cfg`, type-safe registers, strong error handling). Implementation is not yet written—this repo captures the design, TODOs, and example layout to accelerate bring-up.
+ Rust driver skeleton for TI TPS55288 36 V / 16 A four-switch buck-boost converter with I2C control. This repo follows the patterns proven in `sc8815-rs` (no-std, sync/async via `maybe-async-cfg`, type-safe registers, strong error handling). Core driver helpers are in place; example/CI are pending.
 
 ## Status
 - Sync + async driver helpers implemented (I2C read/write, VOUT/ILIM, VOUT_SR, feedback, cable comp, STATUS decode, init).
