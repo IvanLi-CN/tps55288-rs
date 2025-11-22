@@ -4,12 +4,11 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_stm32::{bind_interrupts, i2c};
-use panic_probe as _;
+use {defmt_rtt as _, panic_probe as _};
 
 mod common;
 use common::{heartbeat, init_board, log_status, setup_device};
 use tps55288_rs::driver::Tps55288;
-use tps55288_rs::data_types::OperatingStatus;
 
 bind_interrupts!(struct Irqs {
     I2C1 => i2c::EventInterruptHandler<embassy_stm32::peripherals::I2C1>, i2c::ErrorInterruptHandler<embassy_stm32::peripherals::I2C1>;
@@ -19,6 +18,7 @@ bind_interrupts!(struct Irqs {
 async fn main(_spawner: Spawner) {
     info!("TPS55288 step-vout demo (PB6/PB7 I2C1, PB5 EN)");
     let mut board = init_board();
+    board.en.set_high();
     let mut dev = Tps55288::new(board.i2c);
     setup_device(&mut dev).await;
 

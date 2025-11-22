@@ -2,6 +2,7 @@
 name = "tps55288-stm32g031g8u6"
 version = "0.1.0"
 edition = "2021"
+autobins = false
 
 [features]
 default = []
@@ -23,9 +24,9 @@ tps55288-rs = { path = "../.." }
 embedded-hal = "1"
 
 # Embassy stack (only used when feature "hw" is enabled)
-embassy-executor = { version = "0.5.0", optional = true, features = ["executor-thread", "arch-cortex-m", "defmt"] }
-embassy-time = { version = "0.3.0", optional = true, features = ["defmt"] }
-embassy-stm32 = { version = "0.1.0", optional = true, features = [
+embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "94f9b2707486ca3eade5bf4b237edf3d6aa90f35", optional = true, features = ["executor-thread", "arch-cortex-m", "defmt"] }
+embassy-time = { git = "https://github.com/embassy-rs/embassy.git", rev = "94f9b2707486ca3eade5bf4b237edf3d6aa90f35", optional = true, features = ["defmt", "tick-hz-32_768"] }
+embassy-stm32 = { git = "https://github.com/embassy-rs/embassy.git", rev = "94f9b2707486ca3eade5bf4b237edf3d6aa90f35", optional = true, features = [
     "stm32g031g8",
     "time-driver-any",
     "exti",
@@ -38,9 +39,10 @@ embassy-stm32 = { version = "0.1.0", optional = true, features = [
 defmt = { version = "0.3", optional = true }
 defmt-rtt = { version = "0.4", optional = true }
 panic-probe = { version = "0.3", optional = true, features = ["print-defmt"] }
-cortex-m = "0.7"
+cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = "0.7"
 embedded-hal-async = { version = "1.0.0", optional = true }
+portable-atomic = { version = "1.7", features = ["critical-section"] }
 
 [profile.release]
 opt-level = "s"
