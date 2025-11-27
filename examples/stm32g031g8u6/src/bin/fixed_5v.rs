@@ -16,13 +16,14 @@ bind_interrupts!(struct Irqs {
 
 #[embassy_executor::main]
 async fn main(_spawner: Spawner) {
-    info!("TPS55288 fixed 12V demo (PB6/PB7 I2C1, PB5 EN)");
+    info!("TPS55288 fixed 5V demo (PB6/PB7 I2C1, PB5 EN)");
     let mut board = init_board();
     board.en.set_high();
     let mut dev = Tps55288::new(board.i2c);
     setup_device(&mut dev).await;
 
-    let target = 12_000u16;
+    // Default demo: fixed 5 V output using internal DAC feedback.
+    let target = 5_000u16;
     let _ = dev.set_vout_mv_async(target).await;
 
     loop {
