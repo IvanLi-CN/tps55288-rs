@@ -57,27 +57,27 @@ where
 {
     info!("Configuring TPS55288 with internal DAC feedback");
 
-    if let Err(e) = dev.init_async().await {
+    if let Err(e) = dev.init().await {
         warn!("init failed: {:?}", defmt::Debug2Format(&e));
     }
-    if let Err(e) = dev.set_ilim_ma_async(3_000, true).await {
+    if let Err(e) = dev.set_ilim_ma(3_000, true).await {
         warn!("set_ilim failed: {:?}", defmt::Debug2Format(&e));
     }
     // Use the smallest internal divider (R0_0564) so the REF DAC maps 0.8–21 V correctly.
     if let Err(e) = dev
-        .set_feedback_async(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564)
+        .set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564)
         .await
     {
         warn!("set_feedback failed: {:?}", defmt::Debug2Format(&e));
     }
     if let Err(e) = dev
-        .set_cable_comp_async(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true)
+        .set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true)
         .await
     {
         warn!("set_cable_comp failed: {:?}", defmt::Debug2Format(&e));
     }
     if let Err(e) = dev
-        .set_vout_sr_async(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128)
+        .set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128)
         .await
     {
         warn!("set_vout_sr failed: {:?}", defmt::Debug2Format(&e));
@@ -85,11 +85,11 @@ where
 
     // Force FPWM at light load using MODE register:
     // MODE bit0 = 1 -> override resistor preset, PFM bit1 = 1 -> FPWM (per datasheet).
-    if let Ok(raw) = dev.read_reg_async(addr::MODE).await {
+    if let Ok(raw) = dev.read_reg(addr::MODE).await {
         let mut mode = ModeBits::from_bits_truncate(raw);
         mode.insert(ModeBits::MODE);
         mode.insert(ModeBits::PFM);
-        if let Err(e) = dev.write_reg_async(addr::MODE, mode.bits()).await {
+        if let Err(e) = dev.write_reg(addr::MODE, mode.bits()).await {
             warn!("set FPWM failed: {:?}", defmt::Debug2Format(&e));
         }
     } else {
@@ -161,10 +161,10 @@ pub async fn log_status_and_mode<I2C>(dev: &mut Tps55288<I2C>, mv: u16)
 where
     I2C: embedded_hal_async::i2c::I2c,
 {
-    if let Ok((mode, faults)) = dev.read_status_async().await {
+    if let Ok((mode, faults)) = dev.read_status().await {
         log_status(mv, mode, faults);
     }
-    if let Ok(raw_mode) = dev.read_reg_async(addr::MODE).await {
+    if let Ok(raw_mode) = dev.read_reg(addr::MODE).await {
         let mode = ModeBits::from_bits_truncate(raw_mode);
         log_mode_register(mode);
     } else {

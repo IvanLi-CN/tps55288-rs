@@ -24,7 +24,7 @@ async fn main(_spawner: Spawner) {
 
     let mut mv: u16 = 3_300;
     loop {
-        let _ = dev.set_vout_mv_async(mv).await;
+        let _ = dev.set_vout_mv(mv).await;
         log_status_and_mode(&mut dev, mv).await;
         heartbeat(&mut board.led).await;
         mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };

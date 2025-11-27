@@ -24,7 +24,7 @@ async fn main(_spawner: Spawner) {
 
     // Default demo: fixed 5 V output using internal DAC feedback.
     let target = 5_000u16;
-    let _ = dev.set_vout_mv_async(target).await;
+    let _ = dev.set_vout_mv(target).await;
 
     loop {
         log_status_and_mode(&mut dev, target).await;

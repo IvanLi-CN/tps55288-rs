@@ -58,6 +58,7 @@ impl<I2C> Tps55288<I2C> {
     }
 }
 
+#[cfg(not(feature = "async"))]
 impl<I2C> Tps55288<I2C>
 where
     I2C: embedded_hal::i2c::I2c,
@@ -261,27 +262,26 @@ impl<I2C> Tps55288<I2C>
 where
     I2C: embedded_hal_async::i2c::I2c,
 {
-    /// Async version of [`init`].
-    pub async fn init_async(&mut self) -> Result<(), Error<I2C::Error>> {
-        self.write_reg_async(addr::IOUT_LIMIT, IoutLimitBits::EN.bits() | 0b1100100)
+    /// Initialize device with safe defaults (async build).
+    pub async fn init(&mut self) -> Result<(), Error<I2C::Error>> {
+        self.write_reg(addr::IOUT_LIMIT, IoutLimitBits::EN.bits() | 0b1100100)
             .await?;
-        self.set_vout_mv_async(crate::registers::VOUT_MIN_MV)
-            .await?;
-        let mut mode = ModeBits::from_bits_truncate(self.read_reg_async(addr::MODE).await?);
+        self.set_vout_mv(crate::registers::VOUT_MIN_MV).await?;
+        let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE).await?);
         mode.remove(ModeBits::OE);
-        self.write_reg_async(addr::MODE, mode.bits()).await?;
+        self.write_reg(addr::MODE, mode.bits()).await?;
         mode.insert(ModeBits::OE);
-        self.write_reg_async(addr::MODE, mode.bits()).await
+        self.write_reg(addr::MODE, mode.bits()).await
     }
 
-    pub async fn write_reg_async(&mut self, reg: u8, value: u8) -> Result<(), Error<I2C::Error>> {
+    pub async fn write_reg(&mut self, reg: u8, value: u8) -> Result<(), Error<I2C::Error>> {
         self.i2c
             .write(self.address, &[reg, value])
             .await
             .map_err(Error::I2c)
     }
 
-    pub async fn read_reg_async(&mut self, reg: u8) -> Result<u8, Error<I2C::Error>> {
+    pub async fn read_reg(&mut self, reg: u8) -> Result<u8, Error<I2C::Error>> {
         let mut buf = [0u8; 1];
         self.i2c
             .write_read(self.address, &[reg], &mut buf)
@@ -290,18 +290,18 @@ where
         Ok(buf[0])
     }
 
-    pub async fn update_reg_async(
+    pub async fn update_reg(
         &mut self,
         reg: u8,
         mask: u8,
         value: u8,
     ) -> Result<(), Error<I2C::Error>> {
-        let cur = self.read_reg_async(reg).await?;
+        let cur = self.read_reg(reg).await?;
         let new = (cur & !mask) | (value & mask);
-        self.write_reg_async(reg, new).await
+        self.write_reg(reg, new).await
     }
 
-    pub async fn write_regs_async(
+    pub async fn write_regs(
         &mut self,
         start_reg: u8,
         data: &[u8],
@@ -318,7 +318,7 @@ where
             .map_err(Error::I2c)
     }
 
-    pub async fn read_regs_async(
+    pub async fn read_regs(
         &mut self,
         start_reg: u8,
         data: &mut [u8],
@@ -329,40 +329,36 @@ where
             .map_err(Error::I2c)
     }
 
-    pub async fn set_vout_mv_async(&mut self, mv: u16) -> Result<(), Error<I2C::Error>> {
+    pub async fn set_vout_mv(&mut self, mv: u16) -> Result<(), Error<I2C::Error>> {
         let code = vout_mv_to_code(mv);
         let bytes = code.to_le_bytes();
-        self.write_regs_async(addr::REF0, &bytes).await
+        self.write_regs(addr::REF0, &bytes).await
     }
 
-    pub async fn get_vout_mv_async(&mut self) -> Result<u16, Error<I2C::Error>> {
+    pub async fn get_vout_mv(&mut self) -> Result<u16, Error<I2C::Error>> {
         let mut buf = [0u8; 2];
-        self.read_regs_async(addr::REF0, &mut buf).await?;
+        self.read_regs(addr::REF0, &mut buf).await?;
         let code = u16::from_le_bytes(buf);
         Ok(code_to_vout_mv(code))
     }
 
-    pub async fn set_ilim_ma_async(
-        &mut self,
-        ma: u16,
-        enable: bool,
-    ) -> Result<(), Error<I2C::Error>> {
+    pub async fn set_ilim_ma(&mut self, ma: u16, enable: bool) -> Result<(), Error<I2C::Error>> {
         let code = ilim_ma_to_code(ma) & 0x7F;
         let mut val = code;
         if enable {
             val |= IoutLimitBits::EN.bits();
         }
-        self.write_reg_async(addr::IOUT_LIMIT, val).await
+        self.write_reg(addr::IOUT_LIMIT, val).await
     }
 
-    pub async fn get_ilim_ma_async(&mut self) -> Result<(u16, bool), Error<I2C::Error>> {
-        let val = self.read_reg_async(addr::IOUT_LIMIT).await?;
+    pub async fn get_ilim_ma(&mut self) -> Result<(u16, bool), Error<I2C::Error>> {
+        let val = self.read_reg(addr::IOUT_LIMIT).await?;
         let enable = (val & IoutLimitBits::EN.bits()) != 0;
         let code = val & 0x7F;
         Ok((code_to_ilim_ma(code), enable))
     }
 
-    pub async fn set_vout_sr_async(
+    pub async fn set_vout_sr(
         &mut self,
         slew: VoutSlewRate,
         ocp_delay: OcpDelay,
@@ -380,10 +376,10 @@ where
             OcpDelay::Ms6_144 => VoutSrBits::OCP_DELAY1,
             OcpDelay::Ms12_288 => VoutSrBits::OCP_DELAY0 | VoutSrBits::OCP_DELAY1,
         };
-        self.write_reg_async(addr::VOUT_SR, bits.bits()).await
+        self.write_reg(addr::VOUT_SR, bits.bits()).await
     }
 
-    pub async fn set_feedback_async(
+    pub async fn set_feedback(
         &mut self,
         source: FeedbackSource,
         ratio: InternalFeedbackRatio,
@@ -398,10 +394,10 @@ where
             InternalFeedbackRatio::R0_0752 => VoutFsBits::INTFB1,
             InternalFeedbackRatio::R0_0564 => VoutFsBits::INTFB0 | VoutFsBits::INTFB1,
         };
-        self.write_reg_async(addr::VOUT_FS, bits.bits()).await
+        self.write_reg(addr::VOUT_FS, bits.bits()).await
     }
 
-    pub async fn set_cable_comp_async(
+    pub async fn set_cable_comp(
         &mut self,
         option: CableCompOption,
         level: CableCompLevel,
@@ -433,18 +429,18 @@ where
             CableCompLevel::V0p7 => CdcBits::CDC2 | CdcBits::CDC1 | CdcBits::CDC0,
         };
         bits |= level_bits;
-        self.write_reg_async(addr::CDC, bits.bits()).await
+        self.write_reg(addr::CDC, bits.bits()).await
     }
 
-    pub async fn read_status_raw_async(&mut self) -> Result<StatusBits, Error<I2C::Error>> {
-        let val = self.read_reg_async(addr::STATUS).await?;
+    pub async fn read_status_raw(&mut self) -> Result<StatusBits, Error<I2C::Error>> {
+        let val = self.read_reg(addr::STATUS).await?;
         Ok(StatusBits::from_bits_truncate(val))
     }
 
-    pub async fn read_status_async(
+    pub async fn read_status(
         &mut self,
     ) -> Result<(OperatingStatus, FaultStatus), Error<I2C::Error>> {
-        let bits = self.read_status_raw_async().await?;
+        let bits = self.read_status_raw().await?;
         let mode_bits = decode_status_mode(&bits);
         let operating = match mode_bits {
             0b00 => OperatingStatus::Boost,
