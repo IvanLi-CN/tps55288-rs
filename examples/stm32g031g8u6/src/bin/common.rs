@@ -12,6 +12,7 @@ use tps55288_rs::data_types::{
     OcpDelay, OperatingStatus, VoutSlewRate,
 };
 use tps55288_rs::driver::Tps55288;
+use tps55288_rs::registers::{addr, ModeBits};
 
 /// Concrete I2C type for I2C1 on PB6/PB7 using DMA1 channels (async mode).
 pub type BoardI2c = I2c<'static, Async>;
@@ -81,6 +82,19 @@ where
     {
         warn!("set_vout_sr failed: {:?}", defmt::Debug2Format(&e));
     }
+
+    // Force PWM at light load using MODE register:
+    // MODE bit0 = 1 -> override resistor preset, PFM bit1 = 0 -> PWM.
+    if let Ok(raw) = dev.read_reg_async(addr::MODE).await {
+        let mut mode = ModeBits::from_bits_truncate(raw);
+        mode.insert(ModeBits::MODE);
+        mode.remove(ModeBits::PFM);
+        if let Err(e) = dev.write_reg_async(addr::MODE, mode.bits()).await {
+            warn!("set FPWM failed: {:?}", defmt::Debug2Format(&e));
+        }
+    } else {
+        warn!("read MODE failed (cannot force PWM)");
+    }
 }
 
 pub fn log_status(mv: u16, mode: OperatingStatus, faults: FaultStatus) {
@@ -97,7 +111,68 @@ pub fn log_status(mv: u16, mode: OperatingStatus, faults: FaultStatus) {
     }
 }
 
+/// Decode MODE register into a human-readable summary.
+pub fn log_mode_register(mode: ModeBits) {
+    let oe = mode.contains(ModeBits::OE);
+    let fsw2x = mode.contains(ModeBits::FSWDBL);
+    let hiccup = mode.contains(ModeBits::HICCUP);
+    let dischg = mode.contains(ModeBits::DISCHG);
+    let vcc_ext = mode.contains(ModeBits::VCC_EXT);
+    let i2c_alt = mode.contains(ModeBits::I2CADD);
+    let override_from_reg = mode.contains(ModeBits::MODE);
+    let pfm_bit = mode.contains(ModeBits::PFM);
+
+    let light_load = if override_from_reg {
+        if pfm_bit {
+            "forced PFM"
+        } else {
+            "forced PWM"
+        }
+    } else if pfm_bit {
+        "PFM (from preset)"
+    } else {
+        "PWM (from preset)"
+    };
+
+    let vcc = if vcc_ext {
+        "VCC=external 5V"
+    } else {
+        "VCC=internal LDO"
+    };
+
+    let addr = if i2c_alt { "I2C addr=0x75" } else { "I2C addr=0x74" };
+
+    info!(
+        "MODE=0x{:02X} oe:{} fsw:{} hiccup:{} dischg:{} {} {} light_load={}",
+        mode.bits(),
+        oe,
+        if fsw2x { "2x" } else { "1x" },
+        hiccup,
+        dischg,
+        vcc,
+        addr,
+        light_load
+    );
+}
+
+/// Log STATUS and MODE registers in one shot (async I2C).
+pub async fn log_status_and_mode<I2C>(dev: &mut Tps55288<I2C>, mv: u16)
+where
+    I2C: embedded_hal_async::i2c::I2c,
+{
+    if let Ok((mode, faults)) = dev.read_status_async().await {
+        log_status(mv, mode, faults);
+    }
+    if let Ok(raw_mode) = dev.read_reg_async(addr::MODE).await {
+        let mode = ModeBits::from_bits_truncate(raw_mode);
+        log_mode_register(mode);
+    } else {
+        warn!("read MODE failed in status loop");
+    }
+}
+
 pub async fn heartbeat(led: &mut Output<'_>) {
     led.toggle();
-    Timer::after(Duration::from_secs(1)).await;
+    // 500 ms heartbeat / log period.
+    Timer::after(Duration::from_millis(500)).await;
 }

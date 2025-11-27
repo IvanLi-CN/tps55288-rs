@@ -7,7 +7,7 @@ use embassy_stm32::{bind_interrupts, i2c};
 use {defmt_rtt as _, panic_probe as _};
 
 mod common;
-use common::{heartbeat, init_board, log_status, setup_device};
+use common::{heartbeat, init_board, log_status_and_mode, setup_device};
 use tps55288_rs::driver::Tps55288;
 
 bind_interrupts!(struct Irqs {
@@ -25,9 +25,7 @@ async fn main(_spawner: Spawner) {
     let mut mv: u16 = 3_300;
     loop {
         let _ = dev.set_vout_mv_async(mv).await;
-        if let Ok((mode, faults)) = dev.read_status_async().await {
-            log_status(mv, mode, faults);
-        }
+        log_status_and_mode(&mut dev, mv).await;
         heartbeat(&mut board.led).await;
         mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };
     }

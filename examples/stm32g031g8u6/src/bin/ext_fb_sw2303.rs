@@ -4,10 +4,11 @@
 use defmt::info;
 use embassy_executor::Spawner;
 use embassy_stm32::{bind_interrupts, i2c};
+use embassy_time::{Duration, Timer};
 use {defmt_rtt as _, panic_probe as _};
 
 mod common;
-use common::{heartbeat, init_board, log_status};
+use common::{init_board, log_status_and_mode};
 use tps55288_rs::data_types::{
     CableCompLevel, CableCompOption, FeedbackSource, InternalFeedbackRatio, OcpDelay,
     VoutSlewRate,
@@ -69,10 +70,14 @@ async fn main(_spawner: Spawner) {
         defmt::warn!("set REF (1.2V) failed: {:?}", defmt::Debug2Format(&e));
     }
 
-    // Finally, enable the output (OE bit in MODE register).
+    // Finally, enable the output (OE bit in MODE register) and force PWM at light load.
     // In external FB mode, SW2303 + the resistor network define VOUT for a given REF code.
     if let Ok(raw) = dev.read_reg_async(addr::MODE).await {
         let mut mode = ModeBits::from_bits_truncate(raw);
+        // Force PWM using MODE register: MODE=1 -> override preset, PFM=0 -> PWM.
+        mode.insert(ModeBits::MODE);
+        mode.remove(ModeBits::PFM);
+        // Enable output while keeping other bits from the MODE pin preset.
         mode.insert(ModeBits::OE);
         if let Err(e) = dev.write_reg_async(addr::MODE, mode.bits()).await {
             defmt::warn!("enable OE failed: {:?}", defmt::Debug2Format(&e));
@@ -86,9 +91,9 @@ async fn main(_spawner: Spawner) {
     // - SW2303 + the FB network own the actual output voltage selection.
     let requested_mv: u16 = 5_000;
     loop {
-        if let Ok((mode, faults)) = dev.read_status_async().await {
-            log_status(requested_mv, mode, faults);
-        }
-        heartbeat(&mut board.led).await;
+        log_status_and_mode(&mut dev, requested_mv).await;
+        // 500 ms heartbeat + log period.
+        board.led.toggle();
+        Timer::after(Duration::from_millis(500)).await;
     }
 }
