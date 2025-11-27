@@ -62,3 +62,8 @@ required-features = ["hw"]
 name = "fixed_5v"
 path = "src/bin/fixed_5v.rs"
 required-features = ["hw"]
+
+[[bin]]
+name = "ext_fb_sw2303"
+path = "src/bin/ext_fb_sw2303.rs"
+required-features = ["hw"]

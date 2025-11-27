@@ -1,25 +1,26 @@
-# STM32G031G8U6 Example (Planned)
+# STM32G031G8U6 Examples
 
-## Goal
-Demonstrate TPS55288 control on STM32G031G8U6: PPS-like dynamic VOUT steps (5/9/12/15/20V), ILIM config, fault polling.
+Rust/Embassy demos for driving TPS55288 from an STM32G031G8U6 board.
+
+## Demos
+- `fixed_5v`: Internal DAC feedback, start at 5 V and poll faults.
+- `step_vout`: Internal DAC feedback, sweep VOUT between 3.3 V and ~21 V.
+- `ext_fb_sw2303`: External FB network on FB/INT pin plus SW2303 PD controller; TPS55288 drives the REF DAC while SW2303 stays in its default profile.
 
 ## Hardware Assumptions
 - STM32G031G8U6 board, I2C1 on PB6 (SCL) / PB7 (SDA) with pull-ups.
-- EN pin tied to PB5 (push-pull). IRQ/INT (FB/INT pin) optional to GPIO input if routed.
-- VIN bench supply (9–20 V). VOUT to load.
+- EN pin tied to PB5 (push-pull). IRQ/INT (FB/INT pin) wired into the external FB network (SW2303 + resistor divider).
+- VIN bench supply (9–20 V). VOUT to load or USB-C connector via SW2303 module.
 - I2C pull-ups present.
 
-## Software Stack (to be written)
-- Crate deps: `embedded-hal` / `embedded-hal-async` (choose sync vs async build), MCU HAL (e.g., stm32g0xx-hal or embassy-stm32).
-- Use `tps55288-rs` driver: init -> set VOUT/ILIM -> loop status check -> step VOUT.
+## Build / Flash
+From the workspace root:
 
-## Planned Flow
-1. Init clocks, I2C, optional GPIO for EN.
-2. Create driver with default address 0x74, call `init()` (or `init_async`).
-3. Set VOUT to 5 V, ILIM to board-safe value (e.g., 3–4 A), select PFM or PWM as desired.
-4. Loop stepping VOUT through 9/12/15/20 V with delays; read status/fault; log via UART/RTT.
-5. Optional: respond to button/serial to change VOUT/ILIM dynamically.
+```bash
+cd examples/stm32g031g8u6
+cargo build --release --features hw --bin fixed_5v
+cargo build --release --features hw --bin step_vout
+cargo build --release --features hw --bin ext_fb_sw2303
+```
 
-## Build/Flash (to be added)
-- Add Cargo configuration with target/runner (e.g., `thumbv6m-none-eabi`).
-- Provide Makefile or justfile for build/flash using openocd/probe-rs.
+Use your usual `probe-rs` / OpenOCD workflow to flash the resulting binaries.
