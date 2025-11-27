@@ -83,12 +83,12 @@ where
         warn!("set_vout_sr failed: {:?}", defmt::Debug2Format(&e));
     }
 
-    // Force PWM at light load using MODE register:
-    // MODE bit0 = 1 -> override resistor preset, PFM bit1 = 0 -> PWM.
+    // Force FPWM at light load using MODE register:
+    // MODE bit0 = 1 -> override resistor preset, PFM bit1 = 1 -> FPWM (per datasheet).
     if let Ok(raw) = dev.read_reg_async(addr::MODE).await {
         let mut mode = ModeBits::from_bits_truncate(raw);
         mode.insert(ModeBits::MODE);
-        mode.remove(ModeBits::PFM);
+        mode.insert(ModeBits::PFM);
         if let Err(e) = dev.write_reg_async(addr::MODE, mode.bits()).await {
             warn!("set FPWM failed: {:?}", defmt::Debug2Format(&e));
         }
@@ -122,16 +122,17 @@ pub fn log_mode_register(mode: ModeBits) {
     let override_from_reg = mode.contains(ModeBits::MODE);
     let pfm_bit = mode.contains(ModeBits::PFM);
 
+    // Per datasheet: PFM bit=0 => PFM, PFM bit=1 => FPWM.
     let light_load = if override_from_reg {
         if pfm_bit {
-            "forced PFM"
+            "forced FPWM"
         } else {
-            "forced PWM"
+            "forced PFM"
         }
     } else if pfm_bit {
-        "PFM (from preset)"
+        "FPWM (from preset)"
     } else {
-        "PWM (from preset)"
+        "PFM (from preset)"
     };
 
     let vcc = if vcc_ext {

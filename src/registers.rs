@@ -19,7 +19,7 @@ pub mod addr {
     pub const VOUT_FS: u8 = 0x04;
     /// Cable droop compensation
     pub const CDC: u8 = 0x05;
-    /// Mode control (PFM/PWM, VCC source, I2C address select, hiccup, discharge, FSW double, OE)
+    /// Mode control (PFM/FPWM, VCC source, I2C address select, hiccup, discharge, FSW double, OE)
     pub const MODE: u8 = 0x06;
     /// Operating/fault status (write-1-to-clear fields)
     pub const STATUS: u8 = 0x07;
@@ -62,7 +62,7 @@ bitflags::bitflags! {
         const VCC_EXT = 1 << 3;
         /// Bit 2: I2C address select (0 = 0x74, 1 = 0x75) when not overridden by MODE resistor.
         const I2CADD  = 1 << 2;
-        /// Bit 1: Light-load mode (0 = PWM, 1 = PFM).
+        /// Bit 1: Light-load mode at light load (0 = PFM, 1 = FPWM).
         const PFM     = 1 << 1;
         /// Bit 0: Operating mode selection (datasheet-defined behavior; keep for completeness).
         const MODE    = 1 << 0;

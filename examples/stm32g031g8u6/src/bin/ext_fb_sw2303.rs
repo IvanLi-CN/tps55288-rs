@@ -70,13 +70,13 @@ async fn main(_spawner: Spawner) {
         defmt::warn!("set REF (1.2V) failed: {:?}", defmt::Debug2Format(&e));
     }
 
-    // Finally, enable the output (OE bit in MODE register) and force PWM at light load.
+    // Finally, enable the output (OE bit in MODE register) and force FPWM at light load.
     // In external FB mode, SW2303 + the resistor network define VOUT for a given REF code.
     if let Ok(raw) = dev.read_reg_async(addr::MODE).await {
         let mut mode = ModeBits::from_bits_truncate(raw);
-        // Force PWM using MODE register: MODE=1 -> override preset, PFM=0 -> PWM.
+        // Force FPWM using MODE register: MODE=1 -> override preset, PFM=1 -> FPWM (per datasheet).
         mode.insert(ModeBits::MODE);
-        mode.remove(ModeBits::PFM);
+        mode.insert(ModeBits::PFM);
         // Enable output while keeping other bits from the MODE pin preset.
         mode.insert(ModeBits::OE);
         if let Err(e) = dev.write_reg_async(addr::MODE, mode.bits()).await {
