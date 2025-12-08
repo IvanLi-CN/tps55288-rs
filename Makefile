@@ -13,7 +13,7 @@ EXAMPLE_STM32G031 := stm32g031g8u6
         run-stm32g031-fixed run-stm32g031-step run-stm32g031-ext-fb \
         build-stm32g031-fixed build-stm32g031-step build-stm32g031-ext-fb \
         attach-stm32g031-fixed attach-stm32g031-step attach-stm32g031-ext-fb \
-        reset-stm32g031 reset-attach-stm32g031
+        reset-stm32g031
 
 help:
 	@echo 'Usage:'
@@ -31,7 +31,6 @@ help:
 	@echo '  attach-stm32g031-step      - Attach to step_vout'
 	@echo '  attach-stm32g031-ext-fb    - Attach to ext_fb_sw2303'
 	@echo '  reset-stm32g031            - Reset target MCU'
-	@echo '  reset-attach-stm32g031     - Reset + attach to ext_fb_sw2303'
 	@echo
 	@echo 'Examples:'
 	@echo '  make run-stm32g031-ext-fb'
@@ -69,6 +68,3 @@ attach-stm32g031-ext-fb:
 
 reset-stm32g031:
 	$(MAKE) -C $(EX_DIR)/$(EXAMPLE_STM32G031) reset
-
-reset-attach-stm32g031:
-	$(MAKE) -C $(EX_DIR)/$(EXAMPLE_STM32G031) reset-attach

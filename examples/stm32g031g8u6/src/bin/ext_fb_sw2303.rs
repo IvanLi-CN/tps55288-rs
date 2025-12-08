@@ -92,8 +92,8 @@ async fn main(_spawner: Spawner) {
     let requested_mv: u16 = 5_000;
     loop {
         log_status_and_mode(&mut dev, requested_mv).await;
-        // 500 ms heartbeat + log period.
+        // 100 ms heartbeat + log period for higher-frequency status sampling.
         board.led.toggle();
-        Timer::after(Duration::from_millis(500)).await;
+        Timer::after(Duration::from_millis(100)).await;
     }
 }

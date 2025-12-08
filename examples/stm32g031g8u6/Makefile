@@ -17,7 +17,7 @@ SELECT_PROBE_SCRIPT := $(ROOT_DIR)/scripts/select-probe.sh
 .PHONY: help select-probe build-fixed build-step build-ext-fb build \
         run-fixed run-step run-ext-fb \
         attach-fixed attach-step attach-ext-fb \
-        reset reset-attach require-probe
+        reset require-probe
 
 help:
 	@echo 'STM32G031G8U6 TPS55288 examples:'
@@ -40,7 +40,6 @@ help:
 	@echo '  attach-step          - Attach to $(BIN_STEP)'
 	@echo '  attach-ext-fb        - Attach to $(BIN_EXT_FB)'
 	@echo '  reset                - Hardware reset only'
-	@echo '  reset-attach         - Reset, then attach to $(BIN_EXT_FB) by default'
 	@echo
 	@echo 'Before run/attach/reset targets, set PROBE_ID:'
 	@echo '  eval "$$(make -s select-probe)"'
@@ -85,8 +84,3 @@ attach-ext-fb: require-probe build-ext-fb
 
 reset: require-probe
 	$(PROBE_RS) reset --probe $(PROBE_ID) --chip $(CHIP)
-
-reset-attach: require-probe build-ext-fb
-	$(PROBE_RS) reset --probe $(PROBE_ID) --chip $(CHIP)
-	$(PROBE_RS) attach --probe $(PROBE_ID) --chip $(CHIP) $(ELF_EXT_FB)
-

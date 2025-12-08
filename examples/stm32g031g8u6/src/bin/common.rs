@@ -55,7 +55,7 @@ pub async fn setup_device<I2C>(dev: &mut Tps55288<I2C>)
 where
     I2C: embedded_hal_async::i2c::I2c,
 {
-    info!("Configuring TPS55288 with internal DAC feedback");
+    info!("Configuring TPS55288 with internal DAC feedback (OE disabled)");
 
     if let Err(e) = dev.init().await {
         warn!("init failed: {:?}", defmt::Debug2Format(&e));
@@ -94,6 +94,11 @@ where
         }
     } else {
         warn!("read MODE failed (cannot force PWM)");
+    }
+
+    // Finally enable output after all configuration is complete.
+    if let Err(e) = dev.enable_output().await {
+        warn!("enable_output failed: {:?}", defmt::Debug2Format(&e));
     }
 }
 
@@ -174,6 +179,6 @@ where
 
 pub async fn heartbeat(led: &mut Output<'_>) {
     led.toggle();
-    // 500 ms heartbeat / log period.
-    Timer::after(Duration::from_millis(500)).await;
+    // 100 ms heartbeat / log period for higher-frequency status sampling.
+    Timer::after(Duration::from_millis(100)).await;
 }

@@ -63,19 +63,30 @@ impl<I2C> Tps55288<I2C>
 where
     I2C: embedded_hal::i2c::I2c,
 {
-    /// Initialize device with safe defaults (enable OE, current limit enabled, default VOUT).
+    /// Enable output (set OE=1 in MODE register, preserving other bits).
+    pub fn enable_output(&mut self) -> Result<(), Error<I2C::Error>> {
+        let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE)?);
+        mode.insert(ModeBits::OE);
+        self.write_reg(addr::MODE, mode.bits())
+    }
+
+    /// Disable output (set OE=0 in MODE register, preserving other bits).
+    pub fn disable_output(&mut self) -> Result<(), Error<I2C::Error>> {
+        let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE)?);
+        mode.remove(ModeBits::OE);
+        self.write_reg(addr::MODE, mode.bits())
+    }
+
+    /// Initialize device with safe defaults (current limit enabled, default VOUT).
+    ///
+    /// Note: OE is left **disabled** here on purpose so that callers can
+    /// finish all configuration first and then explicitly enable the output.
     pub fn init(&mut self) -> Result<(), Error<I2C::Error>> {
         // Enable current limit with default 50 mV (datasheet reset value) to avoid uncontrolled current.
         self.write_reg(addr::IOUT_LIMIT, IoutLimitBits::EN.bits() | 0b1100100)?;
         // Set default VOUT to datasheet reset (REF reset = 0x0000 -> ~0.8 V). Caller should override for actual use.
         self.set_vout_mv(crate::registers::VOUT_MIN_MV)?;
-        // Ensure MODE: OE=0 initially, leave other bits at reset; then enable OE explicitly.
-        let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE)?);
-        mode.remove(ModeBits::OE);
-        self.write_reg(addr::MODE, mode.bits())?;
-        // Enable output (OE=1) keeping other bits unchanged.
-        mode.insert(ModeBits::OE);
-        self.write_reg(addr::MODE, mode.bits())
+        Ok(())
     }
 
     /// Write a single register.
@@ -263,14 +274,27 @@ where
     I2C: embedded_hal_async::i2c::I2c,
 {
     /// Initialize device with safe defaults (async build).
+    ///
+    /// Note: OE is left **disabled** here on purpose so that callers can
+    /// finish all configuration first and then explicitly enable the output.
     pub async fn init(&mut self) -> Result<(), Error<I2C::Error>> {
         self.write_reg(addr::IOUT_LIMIT, IoutLimitBits::EN.bits() | 0b1100100)
             .await?;
         self.set_vout_mv(crate::registers::VOUT_MIN_MV).await?;
+        Ok(())
+    }
+
+    /// Enable output (set OE=1 in MODE register, preserving other bits).
+    pub async fn enable_output(&mut self) -> Result<(), Error<I2C::Error>> {
+        let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE).await?);
+        mode.insert(ModeBits::OE);
+        self.write_reg(addr::MODE, mode.bits()).await
+    }
+
+    /// Disable output (set OE=0 in MODE register, preserving other bits).
+    pub async fn disable_output(&mut self) -> Result<(), Error<I2C::Error>> {
         let mut mode = ModeBits::from_bits_truncate(self.read_reg(addr::MODE).await?);
         mode.remove(ModeBits::OE);
-        self.write_reg(addr::MODE, mode.bits()).await?;
-        mode.insert(ModeBits::OE);
         self.write_reg(addr::MODE, mode.bits()).await
     }
 
