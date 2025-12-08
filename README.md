@@ -20,12 +20,18 @@ use embedded_hal::i2c::I2c;
 
 fn example<I2C: I2c>(i2c: I2C) {
     let mut dev = Tps55288::new(i2c);
+    // init() configures safe defaults but leaves OE disabled so that
+    // callers can finish all register writes before enabling the power stage.
     dev.init().ok();
+    // Configure output voltage, current limit, slew rate, feedback, and cable compensation.
     dev.set_vout_mv(5_000).ok();
     dev.set_ilim_ma(3_000, true).ok();
     dev.set_vout_sr(VoutSlewRate::Sr2p5MvPerUs, OcpDelay::Us128).ok();
     dev.set_feedback(FeedbackSource::Internal, InternalFeedbackRatio::R0_0564).ok();
     dev.set_cable_comp(CableCompOption::Internal, CableCompLevel::V0p0, true, true, true).ok();
+    // Finally enable the output once configuration is complete.
+    dev.enable_output().ok();
+
     let _ = dev.read_status();
 }
 ```
