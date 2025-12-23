@@ -8,7 +8,7 @@ fn vout_roundtrip_mid_range() {
     let mv = 12_000u16;
     let code = vout_mv_to_code(mv);
     let mv_back = code_to_vout_mv(code);
-    assert!(mv_back >= VOUT_MIN_MV && mv_back <= VOUT_MAX_MV);
+    assert!((VOUT_MIN_MV..=VOUT_MAX_MV).contains(&mv_back));
     assert!((mv_back as i32 - mv as i32).abs() <= 20);
 }
 

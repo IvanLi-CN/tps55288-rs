@@ -113,7 +113,7 @@ bitflags::bitflags! {
 /// Convert VOUT millivolts to DAC code (10-bit, 20 mV LSB). Clamps to datasheet limits.
 pub fn vout_mv_to_code(mv: u16) -> u16 {
     let mv = mv.clamp(VOUT_MIN_MV, VOUT_MAX_MV);
-    let code = (mv.saturating_sub(VOUT_MIN_MV) / VOUT_LSB_MV) as u16;
+    let code = mv.saturating_sub(VOUT_MIN_MV) / VOUT_LSB_MV;
     code.min(1023)
 }
 

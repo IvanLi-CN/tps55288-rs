@@ -1,3 +1,5 @@
+#![cfg(not(feature = "async"))]
+
 use embedded_hal_mock::eh1::i2c::{Mock as I2cMock, Transaction as I2cTrans};
 use tps55288_rs::data_types::OperatingStatus;
 use tps55288_rs::driver::Tps55288;

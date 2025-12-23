@@ -12,9 +12,9 @@ jobs:
         feature-set: ["default", "async,defmt"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          toolchain: 1.91.0
           components: clippy, rustfmt
       - name: Cache registry
         uses: actions/cache@v4
