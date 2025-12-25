@@ -4,10 +4,29 @@ version = "0.1.0"
 edition = "2024"
 description = "Rust driver skeleton for TI TPS55288 buck-boost converter (I2C)"
 license = "MIT OR Apache-2.0"
-repository = "https://example.com/tps55288-rs"
+repository = "https://github.com/IvanLi-CN/tps55288-rs"
+documentation = "https://docs.rs/tps55288-rs"
 keywords = ["embedded", "driver", "buck-boost", "tps55288", "i2c"]
 categories = ["embedded", "hardware-support", "no-std"]
 readme = "README.md"
+exclude = [
+  ".github/",
+  ".serena/",
+  "docs/",
+  "downloads/",
+  "node_modules/",
+  "scripts/",
+  "target/",
+  ".bun-version",
+  "bun.lock",
+  "commitlint.config.cjs",
+  "dprint.json",
+  "lefthook.yml",
+  "Makefile",
+  "package.json",
+  "ROADMAP.md",
+  "TODO.md",
+]
 
 [features]
 default = []
