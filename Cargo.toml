@@ -1,6 +1,6 @@
 [package]
 name = "tps55288"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Rust driver skeleton for TI TPS55288 buck-boost converter (I2C)"
 license = "MIT OR Apache-2.0"
