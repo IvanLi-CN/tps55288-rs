@@ -5,7 +5,7 @@ edition = "2024"
 autobins = false
 
 [dependencies]
-tps55288-rs = { path = "../.." }
+tps55288 = { path = "../.." }
 embedded-hal = "1"
 
 # ESP32-S3 bare-metal stack

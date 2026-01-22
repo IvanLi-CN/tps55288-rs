@@ -8,7 +8,7 @@ use {defmt_rtt as _, panic_probe as _};
 
 mod common;
 use common::{heartbeat, init_board, log_status_and_mode, setup_device};
-use tps55288_rs::driver::Tps55288;
+use tps55288::driver::Tps55288;
 
 bind_interrupts!(struct Irqs {
     I2C1 => i2c::EventInterruptHandler<embassy_stm32::peripherals::I2C1>, i2c::ErrorInterruptHandler<embassy_stm32::peripherals::I2C1>;

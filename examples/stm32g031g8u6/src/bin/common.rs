@@ -7,12 +7,12 @@ use embassy_stm32::{
 };
 use embassy_time::{Duration, Timer};
 
-use tps55288_rs::data_types::{
+use tps55288::data_types::{
     CableCompLevel, CableCompOption, FeedbackSource, FaultStatus, InternalFeedbackRatio,
     OcpDelay, OperatingStatus, VoutSlewRate,
 };
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::registers::{addr, ModeBits};
+use tps55288::driver::Tps55288;
+use tps55288::registers::{addr, ModeBits};
 
 /// Concrete I2C type for I2C1 on PB6/PB7 using DMA1 channels (async mode).
 pub type BoardI2c = I2c<'static, Async>;
