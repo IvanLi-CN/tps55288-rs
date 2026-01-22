@@ -13,14 +13,14 @@ hw = [
     "defmt",
     "defmt-rtt",
     "embedded-hal-async",
-    "tps55288-rs/defmt",
-    "tps55288-rs/async",
+    "tps55288/defmt",
+    "tps55288/async",
     "panic-probe",
 ]
 
 
 [dependencies]
-tps55288-rs = { path = "../.." }
+tps55288 = { path = "../.." }
 embedded-hal = "1"
 
 # Embassy stack (only used when feature "hw" is enabled)

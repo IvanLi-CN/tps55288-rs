@@ -14,8 +14,8 @@
 
 ## Usage (sync)
 ```rust
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::{VoutSlewRate, OcpDelay, FeedbackSource, InternalFeedbackRatio, CableCompOption, CableCompLevel};
+use tps55288::driver::Tps55288;
+use tps55288::{VoutSlewRate, OcpDelay, FeedbackSource, InternalFeedbackRatio, CableCompOption, CableCompLevel};
 use embedded_hal::i2c::I2c;
 
 fn example<I2C: I2c>(i2c: I2C) {

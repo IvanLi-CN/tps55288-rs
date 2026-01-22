@@ -4,11 +4,11 @@
 use esp_hal::main;
 use esp_println::println;
 
-use tps55288_rs::data_types::{
+use tps55288::data_types::{
     CableCompLevel, CableCompOption, FeedbackSource, InternalFeedbackRatio, OcpDelay, VoutSlewRate,
 };
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::registers::{addr, ModeBits};
+use tps55288::driver::Tps55288;
+use tps55288::registers::{addr, ModeBits};
 
 use esp_backtrace as _;
 
@@ -82,4 +82,3 @@ fn main() -> ! {
         heartbeat(&mut board.delay);
     }
 }
-

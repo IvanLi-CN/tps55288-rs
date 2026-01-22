@@ -268,7 +268,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tps55288-rs"
+name = "tps55288"
 version = "0.1.0"
 dependencies = [
  "bitflags 2.10.0",

@@ -4,7 +4,7 @@
 use esp_hal::main;
 use esp_println::println;
 
-use tps55288_rs::driver::Tps55288;
+use tps55288::driver::Tps55288;
 
 use esp_backtrace as _;
 
@@ -31,4 +31,3 @@ fn main() -> ! {
         mv = if mv + 20 <= 21_000 { mv + 20 } else { 3_300 };
     }
 }
-

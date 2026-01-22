@@ -12,12 +12,12 @@ use esp_println::println;
 // Required by espflash (ESP-IDF image format): provides the app descriptor section.
 esp_bootloader_esp_idf::esp_app_desc!();
 
-use tps55288_rs::data_types::{
+use tps55288::data_types::{
     CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, InternalFeedbackRatio, OcpDelay,
     OperatingStatus, VoutSlewRate,
 };
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::registers::{addr, ModeBits};
+use tps55288::driver::Tps55288;
+use tps55288::registers::{addr, ModeBits};
 
 // Pin mapping (ESP32-S3 QFN56):
 // - pin 42 = GPIO37 (wired to CE through an inverter)

@@ -1,4 +1,4 @@
-use tps55288_rs::registers::{
+use tps55288::registers::{
     ILIM_MAX_MA, VOUT_MAX_MV, VOUT_MIN_MV, code_to_ilim_ma, code_to_vout_mv, ilim_ma_to_code,
     vout_mv_to_code,
 };

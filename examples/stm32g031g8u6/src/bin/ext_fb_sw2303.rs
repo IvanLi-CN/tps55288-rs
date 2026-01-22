@@ -9,12 +9,12 @@ use {defmt_rtt as _, panic_probe as _};
 
 mod common;
 use common::{init_board, log_status_and_mode};
-use tps55288_rs::data_types::{
+use tps55288::data_types::{
     CableCompLevel, CableCompOption, FeedbackSource, InternalFeedbackRatio, OcpDelay,
     VoutSlewRate,
 };
-use tps55288_rs::driver::Tps55288;
-use tps55288_rs::registers::{addr, ModeBits};
+use tps55288::driver::Tps55288;
+use tps55288::registers::{addr, ModeBits};
 
 bind_interrupts!(struct Irqs {
     I2C1 => i2c::EventInterruptHandler<embassy_stm32::peripherals::I2C1>,
