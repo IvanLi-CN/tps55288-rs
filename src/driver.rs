@@ -2,8 +2,8 @@
 //! Provides blocking I2C helpers; async version will mirror this API behind the `async` feature.
 
 use crate::data_types::{
-    CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, InternalFeedbackRatio, OcpDelay,
-    OperatingStatus, VoutSlewRate,
+    CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, InternalFeedbackRatio,
+    I2cAddress, LightLoadMode, LightLoadOverride, OcpDelay, OperatingStatus, VccSource, VoutSlewRate,
 };
 use crate::error::Error;
 use crate::registers::{
@@ -110,6 +110,75 @@ where
         let cur = self.read_reg(reg)?;
         let new = (cur & !mask) | (value & mask);
         self.write_reg(reg, new)
+    }
+
+    /// Configure the light-load operating mode (PFM/FPWM) via the MODE register.
+    ///
+    /// Datasheet (MODE register):
+    /// - MODE bit0 selects whether VCC/I2CADD/PFM are controlled by the MODE-pin resistor preset
+    ///   (`FromPreset`) or by the MODE register itself (`FromRegister`).
+    /// - PFM bit1 selects the light-load mode: 0 = PFM, 1 = forced PWM (FPWM).
+    ///
+    /// To **force FPWM** through I2C, set `override_sel=FromRegister` and `mode=Pwm`.
+    pub fn set_light_load_mode(
+        &mut self,
+        override_sel: LightLoadOverride,
+        mode: LightLoadMode,
+    ) -> Result<(), Error<I2C::Error>> {
+        let mut bits = ModeBits::from_bits_truncate(self.read_reg(addr::MODE)?);
+
+        match override_sel {
+            LightLoadOverride::FromPreset => bits.remove(ModeBits::MODE),
+            LightLoadOverride::FromRegister => bits.insert(ModeBits::MODE),
+        }
+
+        match mode {
+            LightLoadMode::Pfm => bits.remove(ModeBits::PFM),
+            LightLoadMode::Pwm => bits.insert(ModeBits::PFM),
+        }
+
+        self.write_reg(addr::MODE, bits.bits())
+    }
+
+    /// Configure MODE register control source + the trio it gates (VCC/I2CADD/PFM).
+    ///
+    /// Datasheet (MODE register, bit0):
+    /// - `MODE=0`: VCC/I2CADD/PFM follow the MODE-pin resistor preset.
+    /// - `MODE=1`: VCC/I2CADD/PFM are controlled by the MODE register bits.
+    ///
+    /// IMPORTANT: Once `override_sel=FromRegister`, the `vcc_source` and `address`
+    /// bits are actively applied. Callers should set these explicitly to avoid
+    /// accidentally switching the device's VCC source or I2C address.
+    pub fn set_mode_control(
+        &mut self,
+        override_sel: LightLoadOverride,
+        vcc_source: VccSource,
+        address: I2cAddress,
+        light_load_mode: LightLoadMode,
+    ) -> Result<(), Error<I2C::Error>> {
+        let mut bits = ModeBits::from_bits_truncate(self.read_reg(addr::MODE)?);
+
+        match override_sel {
+            LightLoadOverride::FromPreset => bits.remove(ModeBits::MODE),
+            LightLoadOverride::FromRegister => bits.insert(ModeBits::MODE),
+        }
+
+        match vcc_source {
+            VccSource::Internal => bits.remove(ModeBits::VCC_EXT),
+            VccSource::External5v => bits.insert(ModeBits::VCC_EXT),
+        }
+
+        match address {
+            I2cAddress::Addr0x74 => bits.remove(ModeBits::I2CADD),
+            I2cAddress::Addr0x75 => bits.insert(ModeBits::I2CADD),
+        }
+
+        match light_load_mode {
+            LightLoadMode::Pfm => bits.remove(ModeBits::PFM),
+            LightLoadMode::Pwm => bits.insert(ModeBits::PFM),
+        }
+
+        self.write_reg(addr::MODE, bits.bits())
     }
 
     /// Write a burst starting at a register (for multi-byte REF DAC etc.).
@@ -323,6 +392,64 @@ where
         let cur = self.read_reg(reg).await?;
         let new = (cur & !mask) | (value & mask);
         self.write_reg(reg, new).await
+    }
+
+    /// Configure the light-load operating mode (PFM/FPWM) via the MODE register.
+    ///
+    /// See the blocking `set_light_load_mode` for the datasheet semantics.
+    pub async fn set_light_load_mode(
+        &mut self,
+        override_sel: LightLoadOverride,
+        mode: LightLoadMode,
+    ) -> Result<(), Error<I2C::Error>> {
+        let mut bits = ModeBits::from_bits_truncate(self.read_reg(addr::MODE).await?);
+
+        match override_sel {
+            LightLoadOverride::FromPreset => bits.remove(ModeBits::MODE),
+            LightLoadOverride::FromRegister => bits.insert(ModeBits::MODE),
+        }
+
+        match mode {
+            LightLoadMode::Pfm => bits.remove(ModeBits::PFM),
+            LightLoadMode::Pwm => bits.insert(ModeBits::PFM),
+        }
+
+        self.write_reg(addr::MODE, bits.bits()).await
+    }
+
+    /// Configure MODE register control source + the trio it gates (VCC/I2CADD/PFM).
+    ///
+    /// See the blocking `set_mode_control` for details.
+    pub async fn set_mode_control(
+        &mut self,
+        override_sel: LightLoadOverride,
+        vcc_source: VccSource,
+        address: I2cAddress,
+        light_load_mode: LightLoadMode,
+    ) -> Result<(), Error<I2C::Error>> {
+        let mut bits = ModeBits::from_bits_truncate(self.read_reg(addr::MODE).await?);
+
+        match override_sel {
+            LightLoadOverride::FromPreset => bits.remove(ModeBits::MODE),
+            LightLoadOverride::FromRegister => bits.insert(ModeBits::MODE),
+        }
+
+        match vcc_source {
+            VccSource::Internal => bits.remove(ModeBits::VCC_EXT),
+            VccSource::External5v => bits.insert(ModeBits::VCC_EXT),
+        }
+
+        match address {
+            I2cAddress::Addr0x74 => bits.remove(ModeBits::I2CADD),
+            I2cAddress::Addr0x75 => bits.insert(ModeBits::I2CADD),
+        }
+
+        match light_load_mode {
+            LightLoadMode::Pfm => bits.remove(ModeBits::PFM),
+            LightLoadMode::Pwm => bits.insert(ModeBits::PFM),
+        }
+
+        self.write_reg(addr::MODE, bits.bits()).await
     }
 
     pub async fn write_regs(
