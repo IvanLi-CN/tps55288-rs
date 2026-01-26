@@ -2,8 +2,9 @@
 //! Provides blocking I2C helpers; async version will mirror this API behind the `async` feature.
 
 use crate::data_types::{
-    CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, InternalFeedbackRatio,
-    I2cAddress, LightLoadMode, LightLoadOverride, OcpDelay, OperatingStatus, VccSource, VoutSlewRate,
+    CableCompLevel, CableCompOption, FaultStatus, FeedbackSource, I2cAddress,
+    InternalFeedbackRatio, LightLoadMode, LightLoadOverride, OcpDelay, OperatingStatus, VccSource,
+    VoutSlewRate,
 };
 use crate::error::Error;
 use crate::registers::{
